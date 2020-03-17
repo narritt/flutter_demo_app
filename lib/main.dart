@@ -32,17 +32,71 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   final String apiString = 'https://api.thecatapi.com/v1/images/search?limit=10&page=10&order=Desc';
+  Animation<double> animation;
+  AnimationController animController;
 
   var catList = new List<Cat>();
 
+  @override
+  Widget build(BuildContext context) {
+
+    animController = new AnimationController(vsync: this, duration: new Duration(seconds: 6));
+
+    return Scaffold(
+      body: _builtListView(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _refresh,
+        tooltip: 'Refresh',
+        child: Icon(Icons.refresh),
+      ),
+    );
+  }
+
+  Widget _builtListView() {
+    if (catList.isEmpty) {
+      _refresh();
+      //If no cats - return animation!
+      if(!animController.isAnimating) {     // TODO: why it is not working? start the second animation
+        animController.repeat();
+        print("ANIMATION RUN, RUN STATUS: " + animController.isAnimating.toString());
+        return new Center(
+            child: new RotationTransition(
+                turns: animController,
+                child: Icon(Icons.refresh,
+                    color: Colors.blue,
+                    size: 100,)
+            )
+        );
+      }
+    }
+    //if list full of cats - return list
+    return ListView.builder(
+      itemCount: catList == null ? 0 : catList.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundImage: NetworkImage(catList[index].url),
+          ),
+          title: Text(catList[index].id),
+        );
+      },
+    );
+  }
+
   void _refresh() {
+    catList.clear();
     var catsFuture = fetchCats();
     //When the async done, gets value from 'Future'
     catsFuture.then((_catListResult) {
       catList = _catListResult;
       _builtListView();
+
+      //animation stopping
+      animController.stop();
+      print("ANIMATION STOP, RUN STATUS: " + animController.isAnimating.toString());
+
       setState(() {  });      //rebuild the scene
     });
   }
@@ -62,34 +116,5 @@ class _MyHomePageState extends State<MyHomePage> {
       throw Exception('Failed to load cats');
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _builtListView(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _refresh,
-        tooltip: 'Refresh',
-        child: Icon(Icons.refresh),
-      ),
-    );
-  }
-
-  Widget _builtListView() {
-    if (catList.isEmpty)
-      _refresh();
-    return ListView.builder(
-      itemCount: catList == null ? 0 : catList.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundImage: NetworkImage(catList[index].url),
-          ),
-          title: Text(catList[index].id),
-        );
-      },
-    );
-  }
-
 }
 
