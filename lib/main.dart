@@ -41,37 +41,44 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-
-    animController = new AnimationController(vsync: this, duration: new Duration(seconds: 6));
+    //if (animController == null)                 //if commented - animation reloads, if not - anim disappears at second call
+      animController = new AnimationController(vsync: this, duration: new Duration(seconds: 6));
 
     return Scaffold(
-      body: _builtListView(),
+      body: _builtBody(),
       floatingActionButton: FloatingActionButton(
         onPressed: _refresh,
-        tooltip: 'Refresh',
+        tooltip: 'Refresh cats',
         child: Icon(Icons.refresh),
       ),
     );
   }
 
-  Widget _builtListView() {
-    if (catList.isEmpty) {
+  Widget _builtBody() {
+    if (catList.isEmpty) {              //If no cats - reload and return animation!
       _refresh();
-      //If no cats - return animation!
       if(!animController.isAnimating) {     // TODO: why it is not working? start the second animation
         animController.repeat();
         print("ANIMATION RUN, RUN STATUS: " + animController.isAnimating.toString());
-        return new Center(
-            child: new RotationTransition(
-                turns: animController,
-                child: Icon(Icons.refresh,
-                    color: Colors.blue,
-                    size: 100,)
-            )
-        );
+        return _buildAnimation();
       }
     }
     //if list full of cats - return list
+    return _buildListView();
+  }
+
+  Widget _buildAnimation(){
+    return new Center(
+        child: new RotationTransition(
+            turns: animController,
+            child: Icon(Icons.refresh,
+              color: Colors.blue,
+              size: 100,)
+        )
+    );
+  }
+
+  Widget _buildListView(){
     return ListView.builder(
       itemCount: catList == null ? 0 : catList.length,
       itemBuilder: (context, index) {
@@ -91,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     //When the async done, gets value from 'Future'
     catsFuture.then((_catListResult) {
       catList = _catListResult;
-      _builtListView();
+      _builtBody();
 
       //animation stopping
       animController.stop();
